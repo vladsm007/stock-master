@@ -1,6 +1,6 @@
 const ProductRepository = require('../repositories/ProductRepository');
 const StockMovementRepository = require('../repositories/StockMovementRepository');
-const database = require('../database'); // Add this line to import the database module
+const database = require('../config/database'); // Import corrigido
 
 class StockService {
   constructor() {

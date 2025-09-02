@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String
+  password    String
+  role        UserRole  @default(USE)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  //Relações
+  stockMovements StockMovement[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  //Relações
+  products Product[]
+
+  @@map("categories")
+}
+
+model Supplier {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  phone       String
+  address     String
+  cnpj        String    @unique
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  //Relações
+  products Product[]
+
+  @@map("suppliers")
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  sku           String    @unique
+  barcode       String?   @unique
+  price         Decimal   @db.Decimal(10,2)
+  cost          Decimal   @db.Decimal(10,2)
+  currentStock  Int       @default(0)
+  unit          String    @default("UN") //Unidade, Quilo, Litro, etc.
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  //Chaves Estrangeiras
+  categoryId String
+  supplierId String
+
+  //Relações
+  category Category @relation(fields: [categoryId], references: [id])
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  stockMovements StockMovement[]
+
+  @@map("products")
+}
+
+model StockMovement {
+  id          String      @id @default(uuid())
+  type        MovementType
+  quantity    Int
+  previousStock Int
+  newStock    Int
+  reason      String?
+  reference   String?     // Nota fiscal, pedido, etc
+  unitCost    Decimal?    @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now())
+
+  //Chaves Estrangeiras
+  productId   String
+  userId      String
+
+  //Relações
+  product     Product     @relation(fields: [productId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@map("stock_movements")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USE
+}
+
+enum MovementType {
+  IN          // Entrada
+  OUT         // Saída
+  ADJUSTMENT  // Ajuste
+  TRANSFER    // Transferência
+  LOSS        // Perda
+  RETURN      // Devolução
+}
